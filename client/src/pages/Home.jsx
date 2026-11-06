@@ -1,0 +1,393 @@
+import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { FaCity, FaMapMarkerAlt, FaCommentDots } from 'react-icons/fa';
+import { setVenues, setSelectedVenue } from '../features/venue/venueSlice.js';
+import { setSelectedCity, setCity } from '../features/city/citySlice.js';
+import {
+  Modal,
+  ModalButton,
+  LocationCard,
+  Footer,
+  Carousal,
+  Sidebar,
+} from '../components/index.js';
+import ReviewSlider from '../components/ReviewSlider.jsx';
+import { CiImageOff } from 'react-icons/ci';
+import Loader from '../components/Common/Loader.jsx';
+
+// Define custom styles for headings
+const customStyles = `
+  .heading-container {
+    position: relative;
+    display: inline-block;
+  }
+  .heading-container::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -10px;
+    width: 100%;
+    height: 5px;
+    border-radius: 10px;
+    background-color: #6b21a8; /* Change this color to fit your theme */
+    transform: scaleX(0);
+    transform-origin: bottom right;
+    transition: transform 0.3s ease;
+  }
+  .heading-container:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+  }
+`;
+
+const Home = () => {
+  // console.log("hi",import.meta.env.VITE_BACKEND_URL);
+  const dispatch = useDispatch();
+
+  const { venues } = useSelector(state => state.venue);
+  const { selectedCity } = useSelector(state => state.city);
+
+  const [cities, setCities] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [openModals, setOpenModals] = useState({});
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [images, setImages] = useState([]);
+  const containerRef = useRef(null);
+  const user = useSelector(state => state.user);
+  // const token = Cookies.get("accessToken");
+  // useEffect(() => {
+  //   const fetchUserDetails = async () => {
+  //     try {
+  //       const response = await axios.get(
+  //         `${import.meta.env.VITE_BACKEND_URL}/api/v1/users/current-user`,
+  //         {
+  //           withCredentials: true,
+  //           headers: {
+  //             Authorization: `Bearer ${token}`, // Send token in Authorization header
+  //           },
+  //         }
+  //       );
+  //       const obj = response.data.data;
+  //       dispatch(
+  //         setUserDetails({
+  //           _id: obj._id,
+  //           email: obj.email,
+  //           firstName: obj.firstName,
+  //           lastName: obj.lastName,
+  //           userType: obj.userType,
+  //           contactNumber: obj.contactNumber,
+  //         })
+  //       );
+  //     } catch (err) {
+  //       console.error("error fetching user details!" + err.message);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchUserDetails();
+  // }, [dispatch]);
+
+  // useEffect(() => {
+  //   const getCities = async () => {
+  //     const response = await axios.post(
+  //       `${import.meta.env.VITE_BACKEND_URL}/api/v1/cities/getAllCitiesExceptSelected`,
+  //       { excludedCity: selectedCity?.cityName ? selectedCity.cityName : "City1111" }
+  //     );
+  //     if (response.data.statusCode <= 200)
+  //       setCities(response?.data?.data?.data);
+  //   };
+
+  //   getCities();
+
+  // //   const getReviews = async () => {
+  // //     const response = await axios.post(
+  // //       "${import.meta.env.VITE_BACKEND_URL}/api/v1/reviews/getReviewsByType"
+  // //     );
+  // //     if (response?.data?.statusCode <= 200) {
+  // //       setReviews(response.data.data?.data);
+  // //     }
+  // //   };
+
+  // //   getReviews();
+
+  // //   const getVenues = async () => {
+  // //     const response = await axios.post(
+  // //       "${import.meta.env.VITE_BACKEND_URL}/api/v1/cities/getAllVenuesAtCity",
+  // //       { cityName: selectedCity.cityName ? selectedCity.cityName : "City1111" }
+  // //     );
+  // //     if (response?.data?.statusCode <= 200) {
+  // //       dispatch(setVenues(response.data.data.data))
+  // //     }
+  // //   };
+  // //   getVenues();
+
+  // //   const getImages = async() => {
+  // //     const response = await axios.get("${import.meta.env.VITE_BACKEND_URL}/api/v1/registration/recentEventImages");
+
+  // //     if (response.data.statusCode <= 200)
+  // //       setImages(response?.data?.data?.data);
+  // //   }
+  // //   getImages();
+  // }, [selectedCity]);
+
+  // useEffect(() => {
+  //   const getReviews = async () => {
+  //     const response = await axios.post(
+  //       "${import.meta.env.VITE_BACKEND_URL}/api/v1/reviews/getReviewsByType"
+  //     );
+  //     if (response?.data?.statusCode <= 200) {
+  //       setReviews(response.data.data?.data);
+  //     }
+  //   };
+  //   getReviews();
+  // }, []);
+
+  // useEffect(() => {
+  //   const getVenues = async () => {
+  //     const response = await axios.post(
+  //       "${import.meta.env.VITE_BACKEND_URL}/api/v1/cities/getAllVenuesAtCity",
+  //       { cityName: selectedCity.cityName ? selectedCity.cityName : "City1111" }
+  //     );
+  //     if (response?.data?.statusCode <= 200) {
+  //       dispatch(setVenues(response.data.data.data))
+  //     }
+  //   };
+  //   getVenues();
+  // }, [selectedCity]);
+
+  // useEffect(() => {
+  //   const getImages = async() => {
+  //     const response = await axios.get("${import.meta.env.VITE_BACKEND_URL}/api/v1/registration/recentEventImages");
+
+  //     if (response.data.statusCode <= 200)
+  //       setImages(response?.data?.data?.data);
+  //   }
+  //   getImages();
+  // }, [])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Use Promise.allSettled to run each API independently
+        const results = await Promise.allSettled([
+          axios.post(
+            `${
+              import.meta.env.VITE_BACKEND_URL
+            }/api/v1/cities/getAllCitiesExceptSelected`,
+            {
+              excludedCity: selectedCity?.cityName || 'Hyderabad',
+            },
+          ),
+          axios.post(
+            `${
+              import.meta.env.VITE_BACKEND_URL
+            }/api/v1/reviews/getReviewsByType`,
+          ),
+          axios.post(
+            `${
+              import.meta.env.VITE_BACKEND_URL
+            }/api/v1/cities/getAllVenuesAtCity`,
+            {
+              cityName: selectedCity?.cityName || 'Hyderabad',
+            },
+          ),
+          axios.get(
+            `${
+              import.meta.env.VITE_BACKEND_URL
+            }/api/v1/registration/recentEventImages`,
+          ),
+        ]);
+
+        // Handle results from each API call
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            switch (index) {
+              case 0:
+                setCities(result.value.data.data?.data || []);
+                dispatch(setCity(result.value.data.data?.data || []));
+                break;
+              case 1:
+                setReviews(result.value.data.data?.data || []);
+                break;
+              case 2:
+                dispatch(setVenues(result.value.data.data?.data || []));
+                break;
+              case 3:
+                setImages(result.value.data.data?.data || []);
+                break;
+              default:
+                break;
+            }
+          } else {
+            console.error(`API request ${index} failed:`, result.reason);
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching data!');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [selectedCity, dispatch]);
+
+  const openModal = modalId => {
+    setOpenModals({ ...openModals, [modalId]: true });
+  };
+
+  const closeModal = modalId => {
+    setOpenModals({ ...openModals, [modalId]: false });
+  };
+
+  const scroll = direction => {
+    if (containerRef.current) {
+      const scrollAmount = direction === 'left' ? -200 : 200;
+      containerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleExploreClick = city => {
+    dispatch(setSelectedCity(city));
+  };
+
+  return (
+    <div className="min-h-screen">
+      {loading && <Loader />}
+      <style>{customStyles}</style> {/* Inline styles for headings */}
+      <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <>
+          {/* Modals for diff cities */}
+          <div className="flex items-center justify-center py-6 pt-20 relative">
+            <button
+              onClick={() => scroll('left')}
+              className="absolute left-4 z-10 bg-gray-600 text-white p-2 rounded-full text-2xl font-bold hover:bg-gray-500 transition-colors"
+            >
+              &lt;
+            </button>
+            <div
+              ref={containerRef}
+              className="flex gap-4 p-4 overflow-x-auto hide-scrollbar"
+              style={{ maxHeight: '200px', whiteSpace: 'nowrap' }}
+            >
+              {cities.length !== 0 ? (
+                cities.map(city => (
+                  <ModalButton
+                    key={city._id}
+                    modal={city}
+                    onClick={() => openModal(city._id)}
+                  />
+                ))
+              ) : (
+                <div className="flex flex-col items-center text-center p-6">
+                  <FaCity className="text-6xl text-gray-400 mb-4" />
+                  <h1 className="text-xl font-semibold uppercase">
+                    No cities to display currently
+                  </h1>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => scroll('right')}
+              className="absolute right-4 bg-gray-600 text-white p-2 rounded-full text-2xl font-bold hover:bg-gray-500 transition-colors"
+            >
+              &gt;
+            </button>
+
+            {cities.map(city => (
+              <Modal
+                key={city._id}
+                isOpen={openModals[city._id]}
+                onClose={() => closeModal(city._id)}
+                city={city}
+                handleExploreClick={handleExploreClick}
+              >
+                <img
+                  src={city.cityImage}
+                  alt={city.cityName}
+                  className="w-full h-64 object-cover rounded-md"
+                />
+                <p className="text-mediumGray mt-2">{city.cityDescription}</p>
+              </Modal>
+            ))}
+          </div>
+        
+         
+          {/* exploring locations */}
+          <div className="py-8 px-2">
+            <h2 className="relative mb-6 text-[20px] sm:text-[40px] font-bold sm:text-center ml-3 text-left uppercase gradient-border">
+              {`Explore locations at ${selectedCity?.cityName}`}
+            </h2>
+            {venues.length !== 0 ? (
+              <div className="px-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {venues.map(venue => (
+                  <LocationCard
+                    key={venue._id}
+                    modal={venue}
+                    message={'See Location'}
+                    navigateTo={'/dateSelector'}
+                    dispatchAction={setSelectedVenue}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center text-center p-6 w-full">
+                <FaMapMarkerAlt className="text-6xl text-gray-400 mb-4" />
+                <h1 className="text-2xl font-semibold uppercase ">
+                  No venues available at the city...
+                </h1>
+              </div>
+            )}
+          </div>
+          {/* reviews */}
+          <div className="py-8 px-2">
+            <h2 className="relative mb-6 text-[20px] sm:text-[40px] font-bold sm:text-center text-left ml-3 uppercase gradient-border">
+              Reviews
+            </h2>
+            {reviews.length !== 0 ? (
+              <ReviewSlider reviews={reviews} />
+            ) : (
+              <div className="flex flex-col items-center p-6 w-full ">
+                <FaCommentDots className="text-6xl text-gray-400 mb-4" />
+                <h1 className="text-2xl font-semibold uppercase ">
+                  No reviews to display
+                </h1>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+        {/* images carousal */}
+       <div className="py-8 px-2">
+            <h2 className="relative mb-6 text-[20px] sm:text-[40px] font-bold sm:text-center text-left ml-3 uppercase gradient-border">
+              Recent Events
+            </h2>
+            {images.length !== 0 ? (
+              <Carousal images={images} />
+            ) : (
+              <div className="flex flex-col items-center text-center p-6 w-screen">
+                <CiImageOff className="text-6xl text-gray-400 mb-4" />
+                <h1 className="text-2xl font-semibold uppercase">
+                  No Recent events available at the city...
+                </h1>
+              </div>
+            )}
+          </div>
+      {/* footer */}
+      <Footer />
+    </div>
+  );
+};
+
+export default Home;
